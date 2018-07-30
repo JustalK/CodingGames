@@ -71,6 +71,7 @@ function rankCard(card) {
         /* MUST HAVE */
         case 142: return -6; /* Remove the guard */
         case 143: return -5; /* Remove all abilities */
+        case 148: return -5; /* Remove all abilities and 2 damage */
         case 154: return -4; /* Damage 2 - Draw 1 */
         case 156: return -3; /* Damage 3 and heal 3 */
         case 160: return -2; /* Damage 2 and heal 2 */
@@ -91,7 +92,6 @@ function rankCard(card) {
         case 77: return 2; /* M7 7/7 B */
         case 114: return 2; /* M7 7/7 G */
         
-        case 45: return 3; /* M6 6/5 BD */
         case 43: return 4; /* M6 5/5 D */
         case 76: return 5; /* M6 5/5 BD */
         case 44: return 6; /* M6 3/7 DL */
@@ -101,6 +101,7 @@ function rankCard(card) {
         case 41: return 10; /* M3 2/2 CD */
         case 47: return 11; /* M2 1/5 D */
         case 38: return 12; /* M1 1/3 drain */
+        case 45: return 13; /* M6 6/5 BD H-3 */
         
         case 64: return 4; /* M2 1/1 GW */
         case 63: return 5; /* M2 0/4 GW */
@@ -250,6 +251,7 @@ while (true) {
     } else {
     	freeActions();
     	boostMonsterSaveActions();
+    	lethalItemActions();
     	summonActions();
     	attackItemActions();
     	boostItemActions();
@@ -315,7 +317,36 @@ function boostMonsterSaveActions() {
     }
 }
 
+function lethalItemActions() {
+    for(var i=monsterOpponent.length,monsterLethal=false;i--;) {
+        if(monsterOpponent[i].abilities.indexOf('L')!=-1 || monsterOpponent[i].abilities.indexOf('L')!=-1) {
+            monsterLethal=monsterOpponent[i];
+        }
+    }
+    if(monsterLethal) {
+        var monsterLethalAttack=monsterLethal.def;
+        for(var i=itemInHand.length;i--;) {
+            if(itemInHand[i].cardNumber===148 && me.mana>=itemInHand[i].cost && monsterLethalAttack<=2) {
+                action+='USE '+itemInHand[i].instanceId+' '+monsterLethal.instanceId+';';
+                me.mana-=itemInHand[i].cost;
+                removeInMonsterOpponent(monsterLethal.instanceId);
+            }
+        }
+    }
+}
+
 function summonGuardMonsterActions() {
+    for(var i=0,guardItem=false;i<itemInHand.length;i++) {
+        if(itemInHand[i].cardNumber===122) guardItem=itemInHand[i].instanceId;     
+    }
+    if(guardItem) {
+        for(var i=monsterInHand.length;i--;) {
+            if(monsterInHand[i].abilities.indexOf('G')==-1 && me.mana-2>=monsterInHand[i].cost) {
+                action+='SUMMON '+monsterInHand[i].instanceId+";USE "+guardItem+' '+monsterInHand[i].instanceId+';';   
+                me.mana-=monsterInHand[i].cost-2;
+            }
+        }
+    }
 	for(var i=monsterInHand.length;i--;) {
 		if(monsterInHand[i].abilities.indexOf('G')!=-1 && me.mana>=monsterInHand[i].cost) {
 			me.mana-=monsterInHand[i].cost;
@@ -356,9 +387,19 @@ function attackItemActions() {
 function boostItemActions() {
 	for(var i=itemInHand.length;i--;) {
 		if(boostItem.indexOf(itemInHand[i].cardNumber)!=-1) {
+			// First we try to apply it and a guard monster
 			for(var j=monsterInGame.length;j--;) {
-				if(!monsterInGame[j].blocked && me.mana>=itemInHand[i].cost) {
+				if(!monsterInGame[j].blocked && monsterInGame[j].abilities.indexOf('G')!=-1 && !itemInHand[i].played && me.mana>=itemInHand[i].cost) {
 					action+='USE '+itemInHand[i].instanceId+' '+monsterInGame[j].instanceId+';';
+					itemInHand[i].played=true;
+					me.mana-=itemInHand[i].cost;
+				}
+			}
+			// And then on all monsters
+			for(var j=monsterInGame.length;j--;) {
+				if(!monsterInGame[j].blocked && !itemInHand[i].played && me.mana>=itemInHand[i].cost) {
+					action+='USE '+itemInHand[i].instanceId+' '+monsterInGame[j].instanceId+';';
+					itemInHand[i].played=true;
 					me.mana-=itemInHand[i].cost;
 				}
 			}
@@ -461,4 +502,10 @@ function isStillGuardMonster() {
         }
     }
     return false;
+}
+
+function removeInMonsterOpponent(instanceId) {
+    for(var i=monsterOpponent.length;i--;) {
+        if(monsterOpponent[i].instanceId===instanceId) monsterOpponent.splice(i,1);
+    }
 }
