@@ -59,35 +59,8 @@ function card(cardNumber,instanceId,location,cardType,cost,attack,defense,abilit
 
 function chooseCard(cards) {
     cards.sort(function(a,b) {return rankCard(a)>rankCard(b)});
-    if(hasSuperCard(cards) && !hasDeckSuperCard()) {
-    	for(var i=cards.length,index=0;i--;) {
-    		if(cards[i].cost>6) {
-    			index=i;
-    		}
-    	}
-    	deck.push(cards[index]);
-    	return index;
-    }
     deck.push(cards[0]);
     return cards[0].index;
-}
-
-function hasSuperCard(cards) {
-	for(var i=cards.length;i--;) {
-		if(cards[i].cost>6) {
-			return true;
-		}
-	}
-	return false;
-}
-
-function hasDeckSuperCard() {
-	for(var i=deck.length;i--;) {
-		if(deck[i].cost>6) {
-			return true;
-		}
-	}
-	return false;
 }
 
 /**
@@ -110,6 +83,24 @@ function rankCard(card) {
         case 123: return -1; /* Boost +4/0 */
         case 131: return -1; /* Boost +4/1 */
         case 132: return -1; /* Boost +3/3 B */
+        
+        case 82: return 1; /* 7/7 BDW */
+        case 116: return 2; /* 8/8 BCDGLW */
+        case 80: return 2; /* M8 8/8 BG Draw 1 */
+        case 79: return 2; /* M8 8/8 B */
+        case 77: return 2; /* M7 7/7 B */
+        case 114: return 2; /* M7 7/7 G */
+        
+        case 45: return 3; /* M6 6/5 BD */
+        case 43: return 4; /* M6 5/5 D */
+        case 76: return 5; /* M6 5/5 BD */
+        case 44: return 6; /* M6 3/7 DL */
+        case 42: return 7; /* M4 4/2 D */
+        case 10: return 8; /* M3 3/1 D */
+        case 39: return 9; /* M1 2/1 Drain */
+        case 41: return 10; /* M3 2/2 CD */
+        case 47: return 11; /* M2 1/5 D */
+        case 38: return 12; /* M1 1/3 drain */
         
         case 64: return 4; /* M2 1/1 GW */
         case 63: return 5; /* M2 0/4 GW */
@@ -140,18 +131,6 @@ function rankCard(card) {
         case 112: return 27; /* M6 4/7 G */
         case 111: return 28; /* M6 6/6 G */
         case 113: return 29; /* M6 2/4 G H+4 */
-        
-        case 39: return 30; /* M1 2/1 Drain */
-        case 38: return 31; /* M1 1/3 drain */
-        case 47: return 32; /* M2 1/5 D */
-        case 45: return 33; /* M6 6/5 BD */
-        case 76: return 34; /* M6 5/5 BD */
-        case 43: return 35; /* M6 5/5 D */
-        case 44: return 36; /* M6 3/7 DL */
-        case 41: return 37; /* M3 2/2 CD */
-        case 10: return 38; /* M3 3/1 D */
-        case 42: return 39; /* M4 4/2 D */
-        
         
         /* 0 mana */
         case 83: return 100; /* 1/1 Charge */
@@ -219,16 +198,10 @@ function rankCard(card) {
         case 67: return 169; /* 5/5 WH-2 */
         case 58: return 170; /* 5/6 B */
         /* Super Card */
-        case 116: return 171; /* 8/8 BCDGLW */
-        case 115: return 172; /* 5/5 GW */
-        case 114: return 173; /* 7/7 G */
+        case 115: return 172; /* M8 5/5 GW */
         case 62: return 174; /* 12/12 BG */
         case 78: return 175; /* 5/5 B H-5 */
-        case 82: return 176; /* 7/7 BDW */
         case 61: return 177; /* 10/10 */
-        case 80: return 178; /* 8/8 BG Draw 1 */
-        case 79: return 179; /* 8/8 B */
-        case 77: return 180; /* 7/7 B */
         case 59: return 181; /* 7/7 H+1/H-1 */  
         case 81: return 182; /* 6/6 BC */
         case 23: return 183; /* 8/8 */
@@ -260,10 +233,11 @@ while (true) {
         var inputs = readline().split(' ');
         var acard = new card(inputs[0],inputs[1],inputs[2],inputs[3],inputs[4],inputs[5],inputs[6],inputs[7],inputs[8],inputs[9],inputs[10],i);
         if(acard.cardType===TYPE_CREATURE && acard.location===CARD_IN_HAND) monsterInHand.push(acard);
-        monsterInHand.sort(function(a,b) {return a.cost<b.cost });
+        monsterInHand.sort(function(a,b) {return a.cost>b.cost });
         if(acard.location===CARD_ON_BOARD) monsterInGame.push(acard);
         if(acard.cardType!==TYPE_CREATURE && acard.location===CARD_IN_HAND) itemInHand.push(acard);
         if(acard.cardType===TYPE_CREATURE && acard.location===OPPONENT_BOARD) monsterOpponent.push(acard);
+        monsterOpponent.sort(function(a,b) {return a.cost>b.cost });
         cards.push(acard);
     }
     
@@ -275,6 +249,7 @@ while (true) {
     // If we are above 30, we are in the BATTLE mode
     } else {
     	freeActions();
+    	boostMonsterSaveActions();
     	summonActions();
     	attackItemActions();
     	boostItemActions();
@@ -316,12 +291,39 @@ function summonActions() {
 	summonOtherMonsterActions();
 }
 
+function boostMonsterSaveActions() {
+    monsterOpponent.sort(function(a,b) {return a.att>b.att });
+    var attMe = 0;
+    var attOpponent = 0;
+    for(var i=monsterOpponent.length;i--;) {
+        if(attOpponent<monsterOpponent[i].att) {
+            attOpponent=monsterOpponent[i].att;
+        }
+    }    
+    for(var i=monsterInHand.length;i--;) {
+        if(attMe<monsterInHand[i].att) {
+            attMe=monsterInHand[i].att;
+        }
+    }
+    for(var i=monsterInGame.length;i--;) {
+        if(attMe<monsterInGame[i].att) {
+            attMe=monsterInGame[i].att;
+        }
+    }
+    if(attOpponent>=attMe) {
+        boostItemActions();
+    }
+}
+
 function summonGuardMonsterActions() {
 	for(var i=monsterInHand.length;i--;) {
 		if(monsterInHand[i].abilities.indexOf('G')!=-1 && me.mana>=monsterInHand[i].cost) {
 			me.mana-=monsterInHand[i].cost;
 			monsterInHand[i].played=true;
 			action+='SUMMON '+monsterInHand[i].instanceId+";";
+			if(monsterInHand[i].abilities.indexOf('C')!=-1) {
+			    monsterInGame.push(monsterInHand[i]);           
+			}
 		}
 	}	
 }
@@ -341,7 +343,7 @@ function summonOtherMonsterActions() {
 **/
 function attackItemActions() {
 	for(var i=itemInHand.length;i--;) {
-		if(itemInHand[i].cardNumber==154 || itemInHand[i].cardNumber==156 ||itemInHand[i].cardNumber==160 || itemInHand[i].cardNumber==153) {
+		if(itemInHand[i].cardNumber==154 || itemInHand[i].cardNumber==155 || itemInHand[i].cardNumber==156 ||itemInHand[i].cardNumber==160 || itemInHand[i].cardNumber==153) {
 			if(me.mana>=itemInHand[i].cost) {
 				itemInHand[i].played=true;
 				action+='USE '+itemInHand[i].instanceId+' -1;';
@@ -357,6 +359,7 @@ function boostItemActions() {
 			for(var j=monsterInGame.length;j--;) {
 				if(!monsterInGame[j].blocked && me.mana>=itemInHand[i].cost) {
 					action+='USE '+itemInHand[i].instanceId+' '+monsterInGame[j].instanceId+';';
+					me.mana-=itemInHand[i].cost;
 				}
 			}
 		}
@@ -385,13 +388,16 @@ function attackWithoutGuardOpponentActions() {
 	}
 	for(var i=monsterInGame.length;i--;) {
 		action+='ATTACK '+monsterInGame[i].instanceId+' -1;';
+		monsterInGame[i].played=true;
+		monsterInGame[i].blocked=false;
 	}
 }
 
 function attackWithGuardOpponentActions() {
+    // If I can kill a guard without dying
 	for(var i=monsterOpponent.length;i--;) {
 		for(var j=monsterInGame.length;j--;) {
-			if(monsterOpponent[i].att<monsterInGame[j].def && monsterOpponent[i].def<monsterInGame[j].att) {
+			if(monsterOpponent[i].abilities.indexOf('G')!=-1  && monsterOpponent[i].att<monsterInGame[j].def && monsterOpponent[i].def<monsterInGame[j].att && monsterInGame[j].att>0) {
 				action+='ATTACK '+monsterInGame[j].instanceId+' '+monsterOpponent[i].instanceId+';';
 				monsterOpponent[i].played=true;
 				monsterInGame[j].played=true;
@@ -399,10 +405,22 @@ function attackWithGuardOpponentActions() {
 			}
 		}
 	}
+	// If I can damage a guard monster without dying
 	for(var i=monsterOpponent.length;i--;) {
-		if(!monsterOpponent[i].played) {
+		for(var j=monsterInGame.length;j--;) {
+			if(!monsterInGame[j].played && monsterOpponent[i].abilities.indexOf('G')!=-1  && monsterOpponent[i].att<monsterInGame[j].def && monsterInGame[j].att>0) {
+				action+='ATTACK '+monsterInGame[j].instanceId+' '+monsterOpponent[i].instanceId+';';
+				monsterOpponent[i].played=true;
+				monsterInGame[j].played=true;
+				monsterInGame[j].blocked=true;
+			}
+		}
+	}
+	// If I kill but I gonna die
+	for(var i=monsterOpponent.length;i--;) {
+		if(!monsterOpponent[i].played && (monsterOpponent[i].abilities.indexOf('G')!=-1)) {
 			for(var j=monsterInGame.length;j--;) {
-				if(!monsterInGame[j].played && monsterInGame[j].abilities.indexOf('G')!=-1) {
+				if(!monsterInGame[j].played && (monsterInGame[j].abilities.indexOf('G')==-1 && monsterInGame[j].abilities.indexOf('D')==-1) && monsterInGame[j].att>=monsterOpponent[i].def  && monsterInGame[j].att>0) {
 					action+='ATTACK '+monsterInGame[j].instanceId+' '+monsterOpponent[i].instanceId+';';
 					monsterOpponent[i].played=true;
 					monsterInGame[j].played=true;
@@ -412,21 +430,35 @@ function attackWithGuardOpponentActions() {
 		}
 	}
 	for(var i=monsterOpponent.length;i--;) {
-		if(!monsterOpponent[i].played) {
+		if(!monsterOpponent[i].played && monsterOpponent[i].abilities.indexOf('G')!=-1 ) {
 			for(var j=monsterInGame.length;j--;) {
-				if(!monsterInGame[j].played && !monsterInGame[j].abilities.indexOf('G')!=-1) {
+				if(!monsterInGame[j].played && monsterInGame[j].abilities.indexOf('G')==-1 && monsterInGame[j].att>0) {
 					action+='ATTACK '+monsterInGame[j].instanceId+' '+monsterOpponent[i].instanceId+';';
-					monsterOpponent[i].played=true;
+					monsterOpponent[i].deff -= monsterInGame[j].att;
 					monsterInGame[j].played=true;
 					monsterInGame[j].blocked=true;
+					if(monsterOpponent[i].deff<=0) {
+					    monsterOpponent[i].played=true;
+					}
 				}
 			}
 		}
 	}
-	for(var j=monsterInGame.length;j--;) {
-		if(!monsterInGame[j].played) {
-			action+='ATTACK '+monsterInGame[j].instanceId+' -1;';
-			monsterInGame[j].played=true;
-		}
+	if(!isStillGuardMonster()) {
+    	for(var j=monsterInGame.length;j--;) {
+    		if(!monsterInGame[j].played) {
+    			action+='ATTACK '+monsterInGame[j].instanceId+' -1;';
+    			monsterInGame[j].played=true;
+    		}
+    	}
 	}
+}
+
+function isStillGuardMonster() {
+    for(var i=monsterOpponent.length;i--;) {
+        if(!monsterOpponent[i].played && monsterOpponent[i].abilities.indexOf('G')!=-1) {
+            return true;            
+        }
+    }
+    return false;
 }
