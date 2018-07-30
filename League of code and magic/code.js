@@ -12,9 +12,14 @@ var TYPE_CREATURE = 0;
 var action;
 var cards;
 var turns = 0;
+var boostItem = [128,122,125,127,129,123,131,132];
 
 // Action choice
 var nCard = 0;
+var deck = [];
+var monsterInHand = [];
+var itemInHand = [];
+var monsterInGame = [];
 
 function player() {
     this.health=0;
@@ -32,7 +37,7 @@ function player() {
 var me = new player();
 var opponent = new player();
 
-function card(cardNumber,instanceId,location,cardType,cost,attack,defense,abilities,myHealthChange,opponentHealthChange,cardDraw) {
+function card(cardNumber,instanceId,location,cardType,cost,attack,defense,abilities,myHealthChange,opponentHealthChange,cardDraw,index) {
     this.cardNumber=parseInt(cardNumber);
     this.instanceId=parseInt(instanceId);
     this.location=parseInt(location);
@@ -46,21 +51,43 @@ function card(cardNumber,instanceId,location,cardType,cost,attack,defense,abilit
     this.opponentHealthChange=parseInt(opponentHealthChange);  
     this.cardDraw=parseInt(cardDraw);  
     this.rank;
+    this.index=index;
+    this.played=false;
+    this.blocked=false;
 }
 
+
 function chooseCard(cards) {
-    // Choose the cards with the best att/def/cost combo
-    var index=0;
-    var actualRank=165;
-    for(var i=cards.length;i--;) {
-        cards[i].rank = rankCard(cards[i]);
-        if(cards[i].rank<actualRank) {
-            actualRank = cards[i].rank;
-            index = i;
-        }
+    cards.sort(function(a,b) {return rankCard(a)>rankCard(b)});
+    if(hasSuperCard(cards) && !hasDeckSuperCard()) {
+    	for(var i=cards.length,index=0;i--;) {
+    		if(cards[i].cost>6) {
+    			index=i;
+    		}
+    	}
+    	deck.push(cards[index]);
+    	return index;
     }
-    
-    return index;
+    deck.push(cards[0]);
+    return cards[0].index;
+}
+
+function hasSuperCard(cards) {
+	for(var i=cards.length;i--;) {
+		if(cards[i].cost>6) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function hasDeckSuperCard() {
+	for(var i=deck.length;i--;) {
+		if(deck[i].cost>6) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
@@ -68,189 +95,158 @@ function chooseCard(cards) {
 */
 function rankCard(card) {
     switch(card.cardNumber) {
+        /* MUST HAVE */
+        case 142: return -6; /* Remove the guard */
+        case 143: return -5; /* Remove all abilities */
+        case 154: return -4; /* Damage 2 - Draw 1 */
+        case 156: return -3; /* Damage 3 and heal 3 */
+        case 160: return -2; /* Damage 2 and heal 2 */
+        case 153: return -1; /* Damage 2 and heal 2 */
+        case 128: return -1; /* Boost +4/3 */
+        case 122: return -1; /* Boost +1/3 G */
+        case 125: return -1; /* Boost +2/1 Drain */
+        case 127: return -1; /* Boost +0/6 */
+        case 129: return -1; /* Boost +2/5 */
+        case 123: return -1; /* Boost +4/0 */
+        case 131: return -1; /* Boost +4/1 */
+        case 132: return -1; /* Boost +3/3 B */
+        
+        case 64: return 4; /* M2 1/1 GW */
+        case 63: return 5; /* M2 0/4 GW */
+        case 91: return 1; /* M0 1/2 GH+1 */
+        case 93: return 2; /* M1 2/1 G */
+        case 84: return 3; /* M2 1/1 CDW */
+        case 49: return 6; /* M2 1/2 GL */
+        case 96: return 7; /* M2 3/2 G */
+        case 95: return 8; /* M2 2/3 G */
+        case 94: return 9; /* M2 1/4 G */
+        case 55: return 10; /* M2 0/5 G */
+        case 100: return 11; /* M3 1/6 G */
+        case 99: return 12; /* M3 2/5 G */
+        case 98: return 13; /* M3 2/4 G */
+        case 97: return 14; /* M3 3/3 G */
+        case 40: return 15; /* M3 2/3 DG */
+        case 103: return 16; /* M4 3/6 G */
+        case 87: return 17; /* M4 2/5 CG */
+        case 104: return 18; /* M4 4/4 G */
+        case 101: return 19; /* M4 3/4 G */
+        case 102: return 20; /* M4 3/3 G H-1 */
+        case 105: return 21; /* M5 4/6 G */
+        case 108: return 22; /* M5 2/6 G */
+        case 106: return 23; /* M5 5/5 G */
+        case 74: return 24; /* M5 5/4 BG */
+        case 107: return 25; /* M5 3/3 G H+3 */
+        case 109: return 26; /* M5 0/9 G */
+        case 112: return 27; /* M6 4/7 G */
+        case 111: return 28; /* M6 6/6 G */
+        case 113: return 29; /* M6 2/4 G H+4 */
+        
+        case 39: return 30; /* M1 2/1 Drain */
+        case 38: return 31; /* M1 1/3 drain */
+        case 47: return 32; /* M2 1/5 D */
+        case 45: return 33; /* M6 6/5 BD */
+        case 76: return 34; /* M6 5/5 BD */
+        case 43: return 35; /* M6 5/5 D */
+        case 44: return 36; /* M6 3/7 DL */
+        case 41: return 37; /* M3 2/2 CD */
+        case 10: return 38; /* M3 3/1 D */
+        case 42: return 39; /* M4 4/2 D */
+        
+        
         /* 0 mana */
-        case 91: return 1;
-        case 83: return 2;
+        case 83: return 100; /* 1/1 Charge */
         /* 1 mana */
-        case 2: return 3;
-        case 24: return 4;
-        case 93: return 5;
-        case 1: return 6;
-        case 3: return 7;
-        case 39: return 8;
-        case 38: return 9;
-        case 48: return 10;
-        case 92: return 11;
+        case 48: return 101; /* 1/1 lethal */
+        case 2: return 104; /* 1/2 H-1 */
+        case 24: return 105; /* 1/1 H-1 */
+        case 1: return 106; /* 2/1 H+1 */
+        case 3: return 107; /* 2/2 */
+        case 92: return 108; /* 0/1 G H+2 */
         /* 2 mana */
-        case 29: return 12; /* 2/1 Draw+1 */
-        case 28: return 13; /* 1/2 Draw+1 */
-        case 25: return 14; /* 3/1 H-2 */
-        case 26: return 15; /* 3/2 H-1 */
-        case 96: return 16; /* 3/2 G */
-        case 95: return 17; /* 2/3 G */
-        case 94: return 18; /* 1/4 G */
-        case 64: return 19; /* 1/1 GW */
-        case 55: return 20; /* 0/5 G */
-        case 63: return 21; /* 0/4 GW */
-        case 27: return 22; /* 2/2 H+2 */
-        case 84: return 23; /* 1/1 CDW */
-        case 5: return 24; /* 4/1 */
-        case 6: return 25; /* 3/2 */
-        case 8: return 26; /* 2/3 */
-        case 65: return 27; /* 2/2 W */
-        case 7: return 28; /* 2/2 W */
-        case 4: return 29; /* 1/5 */
-        case 47: return 30; /* 1/5 D */
-        case 49: return 31; /* 1/2 GL */
+        case 29: return 109; /* 2/1 Draw+1 */
+        case 28: return 110; /* 1/2 Draw+1 */
+        case 65: return 111; /* 2/2 W */
+        case 7: return 112; /* 2/2 W */
+        case 27: return 113; /* 2/2 H+2 */
+        case 25: return 114; /* 3/1 H-2 */
+        case 26: return 115; /* 3/2 H-1 */
+        case 5: return 116; /* 4/1 */
+        case 6: return 117; /* 3/2 */
+        case 8: return 118; /* 2/3 */
+        case 4: return 120; /* 1/5 */
         /* 3 mana*/
-        case 32: return 32; /* 3/2 Draw+1 */
-        case 30: return 33; /* 4/2 H-2 */
-        case 31: return 34; /* 3/1 H-1 */
-        case 97: return 35; /* 3/3 G */
-        case 99: return 36; /* 2/5 G */
-        case 98: return 37; /* 2/4 G */
-        case 100: return 38; /* 1/6 G */
-        case 40: return 39; /* 2/3 DG */
-        case 69: return 40; /* 4/4 B */
-        case 41: return 41; /* 2/2 CD */
-        case 86: return 42; /* 1/5 C */
-        case 11: return 43; /* 5/2 */
-        case 50: return 44; /* 3/2 L */
-        case 10: return 45; /* 3/1 D */
-        case 54: return 46; /* 2/2 L */
-        case 12: return 47; /* 2/5 */
+        case 32: return 121; /* 3/2 Draw+1 */
+        case 50: return 122; /* 3/2 L */
+        case 54: return 123; /* 2/2 L */
+        case 30: return 124; /* 4/2 H-2 */
+        case 31: return 125; /* 3/1 H-1 */
+        case 69: return 126; /* 4/4 B */
+        case 86: return 128; /* 1/5 C */
+        case 11: return 129; /* 5/2 */
+        case 12: return 131; /* 2/5 */
         /* 4 Mana */
-        case 33: return 48; /* 4/3 Draw+1 */
-        case 13: return 49; /* 5/3 H+1/-1 */
-        case 102: return 50; /* 3/3 G H-1 */
-        case 103: return 51; /* 3/6 G */
-        case 104: return 52; /* 4/4 G */
-        case 101: return 53; /* 3/4 G */
-        case 14: return 54; /* 9/1 */
-        case 87: return 55; /* 2/5 CG */
-        case 73: return 56; /* 4/4 B/H+4 */
-        case 18: return 57; /* 7/4 */
-        case 70: return 58; /* 5/3 6/3 B */
-        case 72: return 59; /* 5/3 5/3 B */
-        case 16: return 60; /* 6/2 */
-        case 15: return 61; /* 4/5 */
-        case 17: return 62; /* 4/5 */
-        case 71: return 63; /* 3/2 CB */
-        case 42: return 64; /* 4/2 D */
-        case 51: return 65; /* 3/5 L */
-        case 52: return 66; /* 2/4 L */
-        case 53: return 67; /* 1/1 CL */
-        case 57: return 68; /* 1/8 */
+        case 14: return 132; /* 9/1 */
+        case 33: return 133; /* 4/3 Draw+1 */
+        case 51: return 134; /* 3/5 L */
+        case 52: return 135; /* 2/4 L */
+        case 18: return 136; /* 7/4 */
+        case 16: return 137; /* 6/2 */
+        case 13: return 139; /* 5/3 H+1/-1 */
+        case 73: return 140; /* 4/4 B/H+4 */
+        case 70: return 141; /* 5/3 6/3 B */
+        case 72: return 142; /* 5/3 5/3 B */
+        case 15: return 143; /* 4/5 */
+        case 17: return 144; /* 4/5 */
+        case 71: return 145; /* 3/2 CB */
+        case 57: return 146; /* 1/8 */
+        case 53: return 147; /* 1/1 CL */
         /* 5 Mana */
-        case 34: return 69; /* 3/5 Draw+1 */
-        case 107: return 70; /* 3/3 G H+3 */
-        case 74: return 71; /* 5/4 BG */
-        case 106: return 72; /* 5/5 G */
-        case 105: return 73; /* 4/6 G */
-        case 108: return 74; /* 2/6 G */
-        case 75: return 75; /* 6/5 B */
-        case 20: return 76; /* 8/2 */
-        case 88: return 77; /* 4/4 C */
-        case 89: return 78; /* 4/1 C */
-        case 21: return 79; /* 6/5 */
-        case 19: return 80; /* 5/6 */
-        case 109: return 81; /* 5/6 */
-        case 66: return 82; /* 5/1 W */
-        case 109: return 83; /* 0/9 G */
+        case 66: return 151; /* 5/1 W */
+        case 34: return 152; /* 3/5 Draw+1 */
+        case 20: return 153; /* 8/2 */
+        case 75: return 154; /* 6/5 B */
+        case 21: return 155; /* 6/5 */
+        case 109: return 156; /* 5/6 */
+        case 19: return 157; /* 5/6 */
+        case 88: return 158; /* 4/4 C */
+        case 89: return 159; /* 4/1 C */
         /* 6 Mana */
-        case 36: return 84; /* 4/4 Draw 2 cards */
-        case 35: return 85; /* 5/2 B Draw 1 */
-        case 37: return 86; /* 5/7 Draw 1 */
-        case 113: return 87; /* 2/4 G H+4 */
-        case 111: return 88; /* 6/6 G */
-        case 112: return 89; /* 4/7 G */
-        case 67: return 90; /* 5/5 WH-2 */
-        case 45: return 91; /* 6/5 BD */
-        case 58: return 92; /* 5/6 B */
-        case 76: return 93; /* 5/5 BD */
-        case 68: return 94; /* 7/5 W */
-        case 22: return 95; /* 7/5 */
-        case 43: return 96; /* 5/5 D */
-        case 44: return 97; /* 3/7 DL */
+        case 68: return 160; /* M6 7/5 W */
+        case 22: return 161; /* M6 7/5 */
+        case 36: return 166; /* 4/4 Draw 2 cards */
+        case 35: return 167; /* 5/2 B Draw 1 */
+        case 37: return 168; /* 5/7 Draw 1 */
+        case 67: return 169; /* 5/5 WH-2 */
+        case 58: return 170; /* 5/6 B */
         /* Super Card */
-        case 78: return 98; /* 5/5 B H-5 */
-        case 62: return 99; /* 12/12 BG */
-        case 116: return 100; /* 8/8 BCDGLW */
-        case 114: return 101; /* 7/7 G */
-        case 82: return 102; /* 7/7 BDW */
-        case 80: return 103; /* 8/8 BG Draw 1 */
-        case 79: return 104; /* 8/8 B */
-        case 77: return 105; /* 7/7 B */
-        case 59: return 106; /* 7/7 H+1/H-1 */  
-        case 81: return 107; /* 6/6 BC */
-        case 61: return 108; /* 10/10 */
-        case 23: return 109; /* 8/8 */
-        case 60: return 110; /* 4/8 */
-        case 115: return 111; /* 5/5 GW */
-        case 90: return 112; /* 5/5 C */
+        case 116: return 171; /* 8/8 BCDGLW */
+        case 115: return 172; /* 5/5 GW */
+        case 114: return 173; /* 7/7 G */
+        case 62: return 174; /* 12/12 BG */
+        case 78: return 175; /* 5/5 B H-5 */
+        case 82: return 176; /* 7/7 BDW */
+        case 61: return 177; /* 10/10 */
+        case 80: return 178; /* 8/8 BG Draw 1 */
+        case 79: return 179; /* 8/8 B */
+        case 77: return 180; /* 7/7 B */
+        case 59: return 181; /* 7/7 H+1/H-1 */  
+        case 81: return 182; /* 6/6 BC */
+        case 23: return 183; /* 8/8 */
+        case 60: return 184; /* 4/8 */
+        case 90: return 185; /* 5/5 C */
     }
     return 1000;
-}
-
-
-function chooseSummon(me,cards) {
-    // First, I sort the card
-    var cardsSorted=[];
-    var rsl = '';
-    var onBoard = numberCardOneSide(cards);
-    for(var i=cards.length;i--;) {
-        if(cards[i].location===CARD_IN_HAND) {
-            for(var j=0;j<cardsSorted.length && cardsSorted[j].mana<cards[i].mana;j++);
-            for(;j<cardsSorted.length && cardsSorted[j].mana==cards[i].mana && cardsSorted[j].att+cardsSorted[j].def==cards[i].att+cards[i].def;j++);
-            cardsSorted.splice(j,0,cards[i]);
-        }
-    }
-    // Once they are sorted, I look how many monster I can play
-    for(var i=0,mana=me.mana;i<cardsSorted.length;i++) {
-        if(mana>=cardsSorted[i].cost && onBoard<MAX_ON_BOARD_SIDE) {
-            mana=mana-cardsSorted[i].cost;
-            rsl += 'SUMMON '+cardsSorted[i].instanceId+";";
-            onBoard++;
-        }
-    }
-    return rsl;
-}
-
-function chooseAttack(cards) {
-    var rsl='';
-    var guardOpponentCard = [];
-    for(var i=cards.length;i--;) {
-        if(cards[i].location===OPPONENT_BOARD) {
-            if(cards[i].cardType===TYPE_CREATURE && cards[i].abilities.indexOf('G')!=-1) {
-                guardOpponentCard.push(cards[i]);    
-            }
-        }
-    }
-    for(var i=cards.length;i--;) {
-        if(cards[i].location===CARD_ON_BOARD) {
-            if(guardOpponentCard.length==0) {
-                rsl += 'ATTACK '+cards[i].instanceId+' -1'+";";
-            } else {
-                rsl += 'ATTACK '+cards[i].instanceId+' '+guardOpponentCard[0].instanceId+";";
-            }
-        }
-    }
-    return rsl;
-}
-
-function numberCardOneSide(cards) {
-    for(var i=cards.length,rsl=0;i--;) {
-        if(cards[i].location===CARD_ON_BOARD) {
-            rsl++;
-        }
-    }
-    return rsl;
 }
 
 // game loop
 while (true) {
     action = '';
     cards = [];
+    monsterInHand = [];
+    monsterInGame = [];
+    itemInHand = [];
+    monsterOpponent = [];
+    
     // Getting the informations of the player first
     var inputs = readline().split(' ');
     me.reset(inputs[0],inputs[1],inputs[2],inputs[3]);
@@ -262,7 +258,13 @@ while (true) {
     var cardCount = parseInt(readline());
     for (var i = 0; i < cardCount; i++) {
         var inputs = readline().split(' ');
-        cards.push(new card(inputs[0],inputs[1],inputs[2],inputs[3],inputs[4],inputs[5],inputs[6],inputs[7],inputs[8],inputs[9],inputs[10]));
+        var acard = new card(inputs[0],inputs[1],inputs[2],inputs[3],inputs[4],inputs[5],inputs[6],inputs[7],inputs[8],inputs[9],inputs[10],i);
+        if(acard.cardType===TYPE_CREATURE && acard.location===CARD_IN_HAND) monsterInHand.push(acard);
+        monsterInHand.sort(function(a,b) {return a.cost<b.cost });
+        if(acard.location===CARD_ON_BOARD) monsterInGame.push(acard);
+        if(acard.cardType!==TYPE_CREATURE && acard.location===CARD_IN_HAND) itemInHand.push(acard);
+        if(acard.cardType===TYPE_CREATURE && acard.location===OPPONENT_BOARD) monsterOpponent.push(acard);
+        cards.push(acard);
     }
     
     // If we are under 30, we are in the DRAFT mode
@@ -272,10 +274,159 @@ while (true) {
         action += 'PICK '+nCard;
     // If we are above 30, we are in the BATTLE mode
     } else {
-        action += chooseSummon(me,cards);
-        action += chooseAttack(cards);
+    	freeActions();
+    	summonActions();
+    	attackItemActions();
+    	boostItemActions();
+        attackMonsterActions();
     }
     // Pass to the next turns
     print(action);
     turns++;
+}
+
+/**
+* Cherche pour toutes les actions gratuites 
+*/
+function freeActions() {
+	isNeedDisable();
+}
+
+/**
+* Si il y a des creatures avec garde et aue j'ai une carte de disable, on l'a joue 
+**/
+function isNeedDisable() {
+	for(var j=0;j<monsterOpponent.length;j++) {
+		if(monsterOpponent[j].abilities.indexOf('G')!=-1) {
+			for(var i=0;i<itemInHand.length;i++) {
+				if(itemInHand[i].cardNumber==142 || itemInHand[i].cardNumber==143) {
+					if(!itemInHand[i].played) {
+						itemInHand[i].played=true;
+						monsterOpponent[j].abilities.replace('G','-');
+						action+='USE '+itemInHand[i].instanceId+' '+monsterOpponent[j].instanceId+';';
+					}
+				}
+			}
+		}
+	}
+}
+
+function summonActions() {
+	summonGuardMonsterActions();
+	summonOtherMonsterActions();
+}
+
+function summonGuardMonsterActions() {
+	for(var i=monsterInHand.length;i--;) {
+		if(monsterInHand[i].abilities.indexOf('G')!=-1 && me.mana>=monsterInHand[i].cost) {
+			me.mana-=monsterInHand[i].cost;
+			monsterInHand[i].played=true;
+			action+='SUMMON '+monsterInHand[i].instanceId+";";
+		}
+	}	
+}
+
+function summonOtherMonsterActions() {
+	for(var i=monsterInHand.length;i--;) {
+		if(me.mana>=monsterInHand[i].cost) {
+			me.mana-=monsterInHand[i].cost;
+			monsterInHand[i].played=true;
+			action+='SUMMON '+monsterInHand[i].instanceId+";";
+		}
+	}	
+}
+
+/**
+* Si je n'ai pas de creatures a poser mais des sorts d'attaque 
+**/
+function attackItemActions() {
+	for(var i=itemInHand.length;i--;) {
+		if(itemInHand[i].cardNumber==154 || itemInHand[i].cardNumber==156 ||itemInHand[i].cardNumber==160 || itemInHand[i].cardNumber==153) {
+			if(me.mana>=itemInHand[i].cost) {
+				itemInHand[i].played=true;
+				action+='USE '+itemInHand[i].instanceId+' -1;';
+				me.mana-=itemInHand[i].cost;
+			}
+		}
+	}
+}
+
+function boostItemActions() {
+	for(var i=itemInHand.length;i--;) {
+		if(boostItem.indexOf(itemInHand[i].cardNumber)!=-1) {
+			for(var j=monsterInGame.length;j--;) {
+				if(!monsterInGame[j].blocked && me.mana>=itemInHand[i].cost) {
+					action+='USE '+itemInHand[i].instanceId+' '+monsterInGame[j].instanceId+';';
+				}
+			}
+		}
+	}
+}
+
+function attackMonsterActions() {
+	attackWithoutOpponentActions();
+	attackWithoutGuardOpponentActions();
+	attackWithGuardOpponentActions();
+}
+
+function attackWithoutOpponentActions() {
+	if(monsterOpponent.length==0) {
+		for(var i=monsterInGame.length;i--;) {
+			action+='ATTACK '+monsterInGame[i].instanceId+' -1;';
+		}
+	}
+}
+
+function attackWithoutGuardOpponentActions() {
+	for(var i=monsterOpponent.length;i--;) {
+		if(monsterOpponent[i].abilities.indexOf('G')!=-1) {
+			return false;
+		}
+	}
+	for(var i=monsterInGame.length;i--;) {
+		action+='ATTACK '+monsterInGame[i].instanceId+' -1;';
+	}
+}
+
+function attackWithGuardOpponentActions() {
+	for(var i=monsterOpponent.length;i--;) {
+		for(var j=monsterInGame.length;j--;) {
+			if(monsterOpponent[i].att<monsterInGame[j].def && monsterOpponent[i].def<monsterInGame[j].att) {
+				action+='ATTACK '+monsterInGame[j].instanceId+' '+monsterOpponent[i].instanceId+';';
+				monsterOpponent[i].played=true;
+				monsterInGame[j].played=true;
+				monsterInGame[j].blocked=true;
+			}
+		}
+	}
+	for(var i=monsterOpponent.length;i--;) {
+		if(!monsterOpponent[i].played) {
+			for(var j=monsterInGame.length;j--;) {
+				if(!monsterInGame[j].played && monsterInGame[j].abilities.indexOf('G')!=-1) {
+					action+='ATTACK '+monsterInGame[j].instanceId+' '+monsterOpponent[i].instanceId+';';
+					monsterOpponent[i].played=true;
+					monsterInGame[j].played=true;
+					monsterInGame[j].blocked=true;
+				}
+			}
+		}
+	}
+	for(var i=monsterOpponent.length;i--;) {
+		if(!monsterOpponent[i].played) {
+			for(var j=monsterInGame.length;j--;) {
+				if(!monsterInGame[j].played && !monsterInGame[j].abilities.indexOf('G')!=-1) {
+					action+='ATTACK '+monsterInGame[j].instanceId+' '+monsterOpponent[i].instanceId+';';
+					monsterOpponent[i].played=true;
+					monsterInGame[j].played=true;
+					monsterInGame[j].blocked=true;
+				}
+			}
+		}
+	}
+	for(var j=monsterInGame.length;j--;) {
+		if(!monsterInGame[j].played) {
+			action+='ATTACK '+monsterInGame[j].instanceId+' -1;';
+			monsterInGame[j].played=true;
+		}
+	}
 }
