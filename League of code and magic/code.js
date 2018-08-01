@@ -79,7 +79,7 @@ function chooseCard(cards) {
 
 function removeOverChoosenCard() {
     for(var i=cards.length;i--;) {
-        if(cards[i].cardType!=TYPE_CREATURE) {
+        if(cards[i].cardType!=TYPE_CREATURE && cards[i].cardType!=TYPE_ITEM_GREEN) {
             for(var j=deck.length,countDuplicate=0;j--;) {
                 if(deck[j].cardNumber===cards[i].cardNumber) countDuplicate++;    
             }
@@ -99,6 +99,7 @@ function rankCard(card) {
         case 142: return -22; /* Remove the guard */
         case 151: return -21; /* Kill a monster */
         case 143: return -20; /* Remove all abilities */
+        case 149: return -19; /* Remove all abilities and draw a card */
         case 148: return -19; /* Remove all abilities and 2 damage */
         case 118: return -18; /* 0/+3 */
         case 128: return -17; /* Boost +4/3 */
@@ -106,6 +107,7 @@ function rankCard(card) {
         case 125: return -15; /* Boost +2/1 Drain */
         case 124: return -14; /* Boost +2/1 Drain */
         case 124: return -13; /* Boost +3/3 */
+        case 126: return -12; /* Boost +2/3 */
         case 127: return -12; /* Boost +0/6 */
         case 129: return -11; /* Boost +2/5 */
         case 123: return -10; /* Boost +4/0 */
@@ -120,132 +122,127 @@ function rankCard(card) {
         case 157: return -1; /* Damage 1 - heal 1 - Draw 1 */
         case 141: return -1; /* M0 -1/-1 */
         
-        case 116: return 1; /* 8/8 BCDGLW */
-        case 80: return 2; /* M8 8/8 BG Draw 1 */
-        case 79: return 3; /* M8 8/8 B */
-        case 78: return 4; /* M8 5/5 B H-5 */
-        case 17: return 5; /* M4 4/5 */
-        case 11: return 5; /* 5/2 */
-        case 77: return 6; /* M7 7/7 B */
-        case 105: return 7; /* M5 4/6 G */
-        case 114: return 8; /* M7 7/7 G */
+        case 51: return 1; /* M4 3/5 L */
+        case 52: return 2; /* M4 2/4 L */
+        case 53: return 3; /* M4 1/1 CL */
+        case 50: return 4; /* M3 3/2 L */
+        case 49: return 5; /* M2 1/2 GL */
+        case 54: return 6; /* M3 2/2 L */
+        case 48: return 7; /* M1 1/1 lethal */
+        case 70: return 8; /* M4 6/3 B */
+        case 72: return 9; /* M4 5/3 B */
+        case 101: return 10; /* M4 3/4 G */
+        case 42: return 11; /* M4 4/2 D */
+        case 40: return 12; /* M3 2/3 DG */
+        case 104: return 13; /* M4 4/4 G */
+        case 73: return 14; /* M4 4/4 B/H+4 */
+        case 96: return 15; /* M2 3/2 G */
+        case 47: return 16; /* M2 1/5 D */
+        case 38: return 17; /* M1 1/3 drain */
+        case 103: return 18; /* M4 3/6 G */
+        case 14: return 19; /* M4 9/1 */
+        case 18: return 20; /* M4 7/4 */
+        case 16: return 21; /* M4 6/2 */
+        case 11: return 22; /* M3 5/2 */
+        case 41: return 23; /* M3 2/2 CD */
+        case 10: return 24; /* M3 3/1 D */
+        case 65: return 25; /* M2 2/2 W */
+        case 7: return 26; /* M2 2/2 W */
+        case 13: return 27; /* M4 5/3 H+1/-1 */
+        case 87: return 28; /* M4 2/5 CG */
+        case 99: return 29; /* M3 2/5 G */
+        case 98: return 30; /* M3 2/4 G */
+        case 102: return 31; /* M4 3/3 G H-1 */
+        case 69: return 32; /* M3 4/4 B */
+        case 97: return 33; /* M3 3/3 G */
+        case 95: return 34; /* M2 2/3 G */
+        case 9: return 35; /* M3 3/4 */
+        case 6: return 36; /* M2 3/2 */
+        case 39: return 37; /* M1 2/1 Drain */
+        case 100: return 38; /* M3 1/6 G */
+        case 15: return 39; /* M4 4/5 */
+        case 17: return 39; /* M4 4/5 */
+        case 33: return 40; /* M4 4/3 Draw+1 */
+        case 30: return 41; /* M3 4/2 H-2 */
+        case 8: return 42; /* M2 2/3 */
+        case 64: return 43; /* M2 1/1 GW */
+        case 5: return 44; /* M2 4/1 */
+        case 63: return 45; /* M2 0/4 GW */
+        case 71: return 46; /* M4 3/2 CB */
+        case 26: return 47; /* M2 3/2 H-1 */
+        case 32: return 48; /* M3 3/2 Draw+1 */
+        case 12: return 49; /* M3 2/5 */
+        case 25: return 50; /* M2 3/1 H-2 */
+        case 31: return 51; /* M3 3/1 H-1 */
+        case 57: return 52; /* M4 1/8 */
+        case 94: return 53; /* M2 1/4 G */
+        case 93: return 54; /* M1 2/1 G */
+        case 3: return 55; /* M1 2/2 */
+        case 84: return 56; /* M2 1/1 CDW */
+        case 91: return 57; /* M0 1/2 GH+1 */
+        case 27: return 58; /* M2 2/2 H+2 */
+        case 1: return 59; /* M1 2/1 H+1 */
+        case 86: return 60; /* M3 1/5 C */
+        case 4: return 61; /* M2 1/5 */
+        case 2: return 62; /* M1 1/2 H-1 */
+        case 29: return 63; /* M2 2/1 Draw+1 */
+        case 83: return 64; /* M0 1/1 Charge */
+        case 28: return 65; /* M2 1/2 Draw+1 */
+        case 92: return 66; /* M1 0/1 G H+2 */
+        case 24: return 67; /* M1 1/1 H-1 */
+        case 55: return 68; /* M2 0/5 G */
         
-        case 50: return 8; /* 3/2 L */
-        case 65: return 9; /* 2/2 W */
-        case 43: return 10; /* M6 5/5 D */
-        case 8: return 10; /* M2 2/3 */
-        case 70: return 11; /* M4 5/3 6/3 B */
-        case 76: return 12; /* M6 5/5 BD */
-        case 112: return 13; /* M6 4/7 G */
-        case 23: return 14; /* 8/8 */
-        case 101: return 14; /* M4 3/4 G */
-        case 82: return 15; /* 7/7 BDW */
-        case 44: return 16; /* M6 3/7 DL */
-        case 42: return 17; /* M4 4/2 D */
-        case 18: return 17; /* M4 7/4 */
-        case 10: return 18; /* M3 3/1 D */
-        case 39: return 19; /* M1 2/1 Drain */
-        case 41: return 20; /* M3 2/2 CD */
-        case 47: return 21; /* M2 1/5 D */
-        case 38: return 22; /* M1 1/3 drain */
-        case 45: return 23; /* M6 6/5 BD H-3 */
         
-        case 64: return 24; /* M2 1/1 GW */
-        case 63: return 25; /* M2 0/4 GW */
-        case 91: return 26; /* M0 1/2 GH+1 */
-        case 93: return 27; /* M1 2/1 G */
-        case 84: return 28; /* M2 1/1 CDW */
-        case 49: return 29; /* M2 1/2 GL */
-        case 96: return 30; /* M2 3/2 G */
-        case 95: return 31; /* M2 2/3 G */
-        case 94: return 32; /* M2 1/4 G */
-        case 55: return 33; /* M2 0/5 G */
-        case 73: return 33; /* M4 4/4 B/H+4 */
-        case 100: return 34; /* M3 1/6 G */
-        case 99: return 35; /* M3 2/5 G */
-        case 98: return 36; /* M3 2/4 G */
-        case 97: return 37; /* M3 3/3 G */
-        case 40: return 38; /* M3 2/3 DG */
-        case 103: return 39; /* M4 3/6 G */
-        case 87: return 40; /* M4 2/5 CG */
-        case 104: return 41; /* M4 4/4 G */
-        case 13: return 42; /* M4 5/3 H+1/-1 */
-        case 102: return 44; /* M4 3/3 G H-1 */
-        case 108: return 45; /* M5 2/6 G */
-        case 106: return 46; /* M5 5/5 G */
-        case 74: return 47; /* M5 5/4 BG */
-        case 107: return 48; /* M5 3/3 G H+3 */
-        case 109: return 49; /* M5 0/9 G */
-        case 83: return 50; /* M0 1/1 Charge */
-        case 111: return 51; /* M6 6/6 G */
-        case 9: return 52; /* M3 3/4 */
-        case 6: return 52; /* 3/2 */
-        case 113: return 53; /* M6 2/4 G H+4 */
-        
-        /* 0 mana */
-        /* 1 mana */
-        case 48: return 101; /* 1/1 lethal */
-        case 2: return 104; /* 1/2 H-1 */
-        case 24: return 105; /* 1/1 H-1 */
-        case 1: return 106; /* 2/1 H+1 */
-        case 3: return 107; /* 2/2 */
-        case 92: return 108; /* 0/1 G H+2 */
-        /* 2 mana */
-        case 29: return 109; /* 2/1 Draw+1 */
-        case 28: return 110; /* 1/2 Draw+1 */
-        case 7: return 112; /* 2/2 W */
-        case 27: return 113; /* 2/2 H+2 */
-        case 25: return 114; /* 3/1 H-2 */
-        case 26: return 115; /* 3/2 H-1 */
-        case 5: return 116; /* 4/1 */
-        case 4: return 120; /* 1/5 */
-        /* 3 mana*/
-        case 54: return 121; /* 2/2 L */
-        case 32: return 123; /* 3/2 Draw+1 */
-        case 30: return 124; /* 4/2 H-2 */
-        case 31: return 125; /* 3/1 H-1 */
-        case 69: return 126; /* 4/4 B */
-        case 86: return 128; /* 1/5 C */
-        case 12: return 131; /* 2/5 */
-        /* 4 Mana */
-        case 14: return 132; /* 9/1 */
-        case 33: return 133; /* 4/3 Draw+1 */
-        case 51: return 134; /* 3/5 L */
-        case 52: return 135; /* 2/4 L */
-        case 16: return 137; /* 6/2 */
-        case 72: return 142; /* 5/3 5/3 B */
-        case 15: return 143; /* 4/5 */
-        case 71: return 145; /* 3/2 CB */
-        case 57: return 146; /* 1/8 */
-        case 53: return 147; /* 1/1 CL */
         /* 5 Mana */
-        case 66: return 151; /* 5/1 W */
-        case 34: return 152; /* 3/5 Draw+1 */
-        case 20: return 153; /* 8/2 */
-        case 75: return 154; /* 6/5 B */
-        case 21: return 155; /* 6/5 */
-        case 109: return 156; /* 5/6 */
-        case 19: return 157; /* 5/6 */
-        case 88: return 158; /* 4/4 C */
-        case 89: return 159; /* 4/1 C */
-        /* 6 Mana */
-        case 68: return 160; /* M6 7/5 W */
-        case 22: return 161; /* M6 7/5 */
-        case 36: return 166; /* 4/4 Draw 2 cards */
-        case 35: return 167; /* 5/2 B Draw 1 */
-        case 37: return 168; /* 5/7 Draw 1 */
-        case 67: return 169; /* 5/5 WH-2 */
-        case 58: return 170; /* 5/6 B */
+        case 106: return 500; /* M5 5/5 G */
+        case 74: return 501; /* M5 5/4 BG */
+        case 66: return 502; /* M5 5/1 W */
+        case 20: return 503; /* M5 8/2 */
+        case 75: return 504; /* M5 6/5 B */
+        case 21: return 505; /* M5 6/5 */
+        case 105: return 506; /* M5 4/6 G */
+        case 109: return 507; /* M5 5/6 */
+        case 19: return 508; /* M5 5/6 */
+        case 88: return 509; /* M5 4/4 C */
+        case 108: return 510; /* M5 2/6 G */
+        case 34: return 511; /* M5 3/5 Draw+1 */
+        case 89: return 512; /* M5 4/1 C */
+        case 107: return 513; /* M5 3/3 G H+3 */
+        case 109: return 514; /* M5 5/6 */
+        case 110: return 514; /* M5 0/9 G */
+    
         /* Super Card */
-        case 115: return 172; /* M8 5/5 GW */
-        case 62: return 174; /* 12/12 BG */
-        case 61: return 177; /* 10/10 */
-        case 59: return 181; /* 7/7 H+1/H-1 */  
-        case 81: return 182; /* 6/6 BC */
-        case 60: return 184; /* 4/8 */
-        case 90: return 185; /* 5/5 C */
+        case 116: return 1000; /* M12 8/8 BCDGLW */
+        case 82: return 1001; /* M7 7/7 BDW */
+        case 62: return 1002; /* 12/12 BG */
+        case 61: return 1003; /* 10/10 */
+        case 80: return 1004; /* M8 8/8 BG Draw 1 */
+        case 79: return 1005; /* M8 8/8 B */
+        case 23: return 1006; /* M7 8/8 */
+        case 76: return 1007; /* M6 5/5 BD */
+        case 44: return 1008; /* M6 3/7 DL */
+        case 114: return 1009; /* M7 7/7 G */
+        case 77: return 1010; /* M7 7/7 B */
+        case 45: return 1011; /* M6 6/5 BD H-3 */
+        case 111: return 1012; /* M6 6/6 G */
+        case 112: return 1013; /* M6 4/7 G */
+        case 68: return 1014; /* M6 7/5 W */
+        case 43: return 1015; /* M6 5/5 D */
+        case 59: return 1016; /* 7/7 H+1/H-1 */  
+        case 22: return 1017; /* M6 7/5 */
+        case 81: return 1018; /* 6/6 BC */
+        case 78: return 1019; /* M8 5/5 B H-5 */
+        case 36: return 1020; /* M6 4/4 Draw 2 cards */
+        case 35: return 1021; /* M6 5/2 B Draw 1 */
+        case 37: return 1022; /* M6 5/7 Draw 1 */
+        case 67: return 1023; /* M6 5/5 WH-2 */
+        case 58: return 1024; /* M6 5/6 B */
+        case 115: return 1025; /* M8 5/5 GW */
+        case 60: return 1026; /* 4/8 */
+        case 90: return 1027; /* 5/5 C */
+        case 113: return 1028; /* M6 2/4 G H+4 */
     }
-    return 1000;
+    return 10000;
 }
 
 // game loop
@@ -290,8 +287,8 @@ while (true) {
         	freeActions();
         	removeGuardActions();
         	removeDrainActions();
-        	//boostMonsterSaveActions();
         	lethalItemActions();
+        	boostGuardActions();
         	summonActions();
         	boostDrainActions();
         	attackItemActions();
@@ -382,45 +379,11 @@ function isEasyKill() {
     }
 }
 
-function boostMonsterSaveActions() {
-    monsterOpponent.sort(function(a,b) {return a.att>b.att });
-    var attMe = 0;
-    var attOpponent = 0;
-    var bigMonster=0;
-    for(var i=monsterOpponent.length;i--;) {
-        if(attOpponent<monsterOpponent[i].att) {
-            attOpponent=monsterOpponent[i].att;
-            bigMonster=monsterOpponent[i];
-        }
-    }    
-    for(var i=monsterInHand.length;i--;) {
-        if(attMe<monsterInHand[i].att) {
-            attMe=monsterInHand[i].att;
-        }
-    }
-    for(var i=monsterInGame.length;i--;) {
-        if(attMe<monsterInGame[i].att) {
-            attMe=monsterInGame[i].att;
-        }
-    }
-    if(attOpponent>=attMe) {
-        if(getCardNumberFromHand(151)  && bigMonster.hasGuard() && me.mana>=5) {
-            action+='USE '+getCardNumberFromHand(151)+' '+bigMonster.instanceId+';';
-        } else {
-            boostItemActions();
-        }
-    }
-}
-
 function removeGuardActions() {
-    for(var i=monsterOpponent.length,monsterGuard=false;i--;) {
-        if(monsterOpponent[i].hasGuard()) {
-            monsterGuard=monsterOpponent[i];
-        }
-    }
-    if(monsterGuard) {
+    if(opponentHasGuardMonster && !hasMonsterInHandPlayable() && !hasBoostPlayable()) {
+        var monsterGuard=opponentHasGuardMonster();
         for(var i=itemInHand.length;i--;) {
-            if((itemInHand[i].cardNumber===148 || itemInHand[i].cardNumber===142) && me.mana>=itemInHand[i].cost) {
+            if((itemInHand[i].cardNumber===148 || itemInHand[i].cardNumber===142 || itemInHand[i].cardNumber===149) && me.mana>=itemInHand[i].cost) {
                 monsterGuard.abilities='';
                 action+='USE '+itemInHand[i].instanceId+' '+monsterGuard.instanceId+';';
                 me.mana-=itemInHand[i].cost;
@@ -438,7 +401,7 @@ function removeDrainActions() {
     }
     if(monsterDrain) {
         for(var i=itemInHand.length;i--;) {
-            if((itemInHand[i].cardNumber===148 || itemInHand[i].cardNumber===142) && me.mana>=itemInHand[i].cost) {
+            if((itemInHand[i].cardNumber===148 || itemInHand[i].cardNumber===142 || itemInHand[i].cardNumber===149) && me.mana>=itemInHand[i].cost) {
                 monsterDrain.abilities='';
                 action+='USE '+itemInHand[i].instanceId+' '+monsterDrain.instanceId+';';
                 me.mana-=itemInHand[i].cost;
@@ -462,6 +425,12 @@ function lethalItemActions() {
                 removeInMonsterOpponent(monsterLethal.instanceId);
             }
         }
+    }
+}
+
+function boostGuardActions() {
+    if(hasBoostPlayable() && hasGuardMonsterAlive()) {
+        boostItemActions();
     }
 }
 
@@ -571,6 +540,7 @@ function boostDrainActions() {
 }
 
 function boostItemActions() {
+    itemInHand.sort(function(a,b) { return rankCard(a)<rankCard(b)});
 	for(var i=itemInHand.length;i--;) {
 		if(itemInHand[i].cardType===TYPE_ITEM_GREEN) {
 			if(itemInHand[i].cardNumber==118) {
@@ -712,6 +682,36 @@ function isStillGuardMonster() {
     for(var i=monsterOpponent.length;i--;) {
         if(!monsterOpponent[i].played && monsterOpponent[i].hasGuard()) {
             return true;            
+        }
+    }
+    return false;
+}
+
+function hasMonsterInHandPlayable() {
+    for(var i=monsterInHand.length;i--;) {
+        if(me.mana>=monsterInHand[i].cost) return true;
+    }    
+    return false;
+}
+
+function hasBoostPlayable() {
+    for(var i=itemInHand.length;i--;) {
+        if(itemInHand[i].cardType===TYPE_ITEM_GREEN && me.mana>=itemInHand[i].cost) return itemInHand[i].instanceId;     
+    }
+    return false;
+}
+
+function hasGuardMonsterAlive() {
+    for(var i=monsterInGame.length;i--;) {
+        if(monsterInGame[i].hasGuard()) return true;
+    }    
+    return false;    
+}
+
+function opponentHasGuardMonster() {
+    for(var i=monsterOpponent.length,monsterGuard=false;i--;) {
+        if(monsterOpponent[i].hasGuard()) {
+            return monsterOpponent[i];
         }
     }
     return false;
